@@ -28,7 +28,7 @@ my $geo = new Geo::GeoNames();
 
 # Return a geotag for the given tweet (this is only a prototype).
 sub parser ($) {
-  my $tag = "";
+  my @tags;
   my $line = shift;
 
   my @tokens = split(/ /, $line);
@@ -36,31 +36,30 @@ sub parser ($) {
   # Take the first hashmark and use it to query the GeoNames API
   for my $token (@tokens) {
     if ($token =~ /#(?<location>\w+)/) {
-      $tag = $+{location};
-      last;
+      push(@tags, $+{location});
     }
   }
 
-  # TODO Check whether this is a location at all -- use the text parser
-  # here.
+  my @results;
+  for my $tag (@tags) {
+    if ($tag ne "") {
+      my $result = $geo->search(q => "$tag", maxRows => 20);
 
-  if ($tag ne "") {
-    my $result = $geo->search(q => "$tag", maxRows => 20);
-
-    # Print the first (more accurate?) result:
-    if ($result && $result->[0]->{name}) {
-        print $result->[0]->{name} . " => long: " . $result->[0]->{lng} . 
-          ", lat: " . $result->[0]->{lat} . "\n";
-    } else {
-      print "Location not found\n";
+      # Print the first (more accurate?) result:
+      if ($result && $result->[0]->{name}) {
+          push(@results, $result->[0]->{name} . " (long: " . 
+            $result->[0]->{lng} . ", lat: " . $result->[0]->{lat} . ")");
+      } else {
+        print "Can't geotag :(\n";
+      }
     }
   }
-  return $tag;
+  print join(", ", @results) . "\n";
 }
 
 # Input: the tweets.
 open(TWEET_STREAM, "geo_tweets.txt") or die "Error: $!";
 while (<TWEET_STREAM>) {
-  parser($_);
+  parser $_;
 }
 close TWEET_STREAM;
