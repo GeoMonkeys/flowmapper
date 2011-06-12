@@ -47,13 +47,12 @@ sub parser ($) {
   if ($tag ne "") {
     my $result = $geo->search(q => "$tag", maxRows => 20);
 
-    # Analyze the result string for errors TODO
-    
-
     # Print the first (more accurate?) result:
-    if ($result) {
-      print $result->[0]->{name} . " => long: " . $result->[0]->{lng} . 
-        ", lat: " . $result->[0]->{lat} . "\n";
+    if ($result && $result->[0]->{name}) {
+        print $result->[0]->{name} . " => long: " . $result->[0]->{lng} . 
+          ", lat: " . $result->[0]->{lat} . "\n";
+    } else {
+      print "Location not found\n";
     }
   }
   return $tag;
@@ -63,6 +62,5 @@ sub parser ($) {
 open(TWEET_STREAM, "geo_tweets.txt") or die "Error: $!";
 while (<TWEET_STREAM>) {
   parser($_);
-  sleep 5;
 }
 close TWEET_STREAM;
